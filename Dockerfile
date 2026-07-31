@@ -31,13 +31,12 @@ COPY . /var/www/html/
 
 # O Railway injeta a porta em runtime via $PORT; o Apache por defeito
 # só sabe escutar na 80, por isso ajustamos isso no arranque do container
-RUN printf '#!/bin/bash\nset -e\nPORT="${PORT:-80}"\nsed -i "s/80/${PORT}/g" /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
+RUN printf '#!/bin/bash\nset -e\nPORT="${PORT:-80}"\nsed -i "s/80/${PORT}/g" /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf\necho "=== Modulos MPM carregados ==="\napache2ctl -M 2>&1 | grep -i mpm || true\necho "=== apache2ctl configtest (config real de arranque) ==="\napache2ctl configtest\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
 
-# Verificação final: testa a configuração exatamente como o Apache faz no
-# arranque. Se houver algum erro (incluindo MPM duplicado), o build falha
-# aqui, com a mensagem completa nos logs de build — evita ter de fazer
-# deploy às cegas para descobrir o problema.
+# Verificação de build: testa a config original (antes do sed de runtime).
+# A verificação que importa de facto acontece dentro do start.sh, já com a
+# porta substituída, e os resultados vão aparecer nos Deploy Logs.
 RUN apache2ctl configtest
 
 EXPOSE 80
