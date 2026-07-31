@@ -1,4 +1,8 @@
 <?php
+
+phpinfo();
+exit;
+
 session_start();
 include 'bd.php'; // conexão PDO
 ?>
