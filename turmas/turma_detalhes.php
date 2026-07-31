@@ -50,11 +50,13 @@ try {
         }
     }
 
+    // LEFT JOIN com contagem pré-agregada em vez de subquery correlacionada
+    // por aluno (evita 1 scan extra de "perguntas" para cada aluno da turma).
     $stmtAlunos = $conn->prepare("
-        SELECT u.id, u.nome, u.email,
-               (SELECT COUNT(*) FROM perguntas p WHERE p.usuario_id = u.id) AS qtd_perguntas
+        SELECT u.id, u.nome, u.email, COALESCE(pq.qtd, 0) AS qtd_perguntas
         FROM turma_alunos ta
         JOIN usuarios u ON u.id = ta.aluno_id
+        LEFT JOIN (SELECT usuario_id, COUNT(*) AS qtd FROM perguntas GROUP BY usuario_id) pq ON pq.usuario_id = u.id
         WHERE ta.turma_id = :turma_id
         ORDER BY u.nome ASC
     ");

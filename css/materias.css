@@ -475,14 +475,41 @@ body {
     padding: 20px;
 }
 
-/* Textarea mais alto */
-.pergunta-textarea {
-    min-height: 200px;
+/* Modal de pergunta e de resposta com exatamente o mesmo tamanho,
+   independente do conteúdo interno (dropdown de matéria só existe num deles) */
+.modal-pergunta-lg .modal-content {
+    display: flex;
+    flex-direction: column;
+    height: 420px;
+    max-height: 85vh;
+}
+
+/* O form é o único filho direto do modal-content: precisa esticar também,
+   senão o modal-body não recebe a altura sobrando (fica espaço em branco) */
+.modal-pergunta-lg .modal-content > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.modal-pergunta-lg .modal-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Textarea/editor preenchem o espaço restante do modal-body */
+.modal-pergunta-lg .pergunta-textarea,
+.modal-pergunta-lg .editor-area {
+    flex: 1;
+    min-height: 110px;
 }
 
 /* ===== EDITOR DE RESPOSTA ===== */
 .editor-area {
-    min-height: 200px;
     padding: 14px;
     border-radius: 12px;
     background: #f4f7fb;
@@ -934,5 +961,70 @@ body {
     }
     to {
         width: 0%;
+    }
+}
+
+/* ====== SIDEBAR MOBILE (hambúrguer) ====== */
+/* Botão hambúrguer e overlay ficam ocultos por padrão (desktop inalterado) */
+.sidebar-toggle-btn {
+    display: none;
+}
+
+.sidebar-overlay {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .sidebar-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background-color: #1e1e1e;
+        color: #fff;
+        border: none;
+        font-size: 22px;
+        z-index: 1050;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        cursor: pointer;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 1040;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar.sidebar-open {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 1030;
+    }
+
+    .sidebar-overlay.sidebar-overlay-visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .main {
+        width: 100%;
     }
 }

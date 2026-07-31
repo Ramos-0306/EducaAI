@@ -35,9 +35,23 @@ if ($materiaSelecionada != '') {
 }
 $perguntas = $stmt->fetchAll();
 
-// Buscar todas as respostas e agrupar por pergunta_id
-$resStmt = $conn->query("SELECT * FROM respostas ORDER BY criado_em ASC");
-$allRespostas = $resStmt->fetchAll();
+// Buscar respostas e agrupar por pergunta_id.
+// Quando há filtro de matéria, busca só as respostas das perguntas exibidas
+// (evita trazer a tabela "respostas" inteira do sistema para mostrar 1 matéria).
+$idsPerguntas = array_column($perguntas, 'id');
+if ($materiaSelecionada != '') {
+    if ($idsPerguntas) {
+        $placeholders = implode(',', array_fill(0, count($idsPerguntas), '?'));
+        $resStmt = $conn->prepare("SELECT * FROM respostas WHERE pergunta_id IN ($placeholders) ORDER BY criado_em ASC");
+        $resStmt->execute($idsPerguntas);
+        $allRespostas = $resStmt->fetchAll();
+    } else {
+        $allRespostas = [];
+    }
+} else {
+    $resStmt = $conn->query("SELECT * FROM respostas ORDER BY criado_em ASC");
+    $allRespostas = $resStmt->fetchAll();
+}
 
 $respostasPorPergunta = [];
 foreach ($allRespostas as $r) {
@@ -136,8 +150,16 @@ $materias = [
 </head>
 <body>
 
+<!-- BOTÃO HAMBÚRGUER (mobile) -->
+<button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Abrir menu">
+    <i class="bi bi-list"></i>
+</button>
+
+<!-- OVERLAY (mobile) -->
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+
 <!-- SIDEBAR -->
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
         <!-- LOGO -->
     <div class="sidebar-logo text-center mb-4">
         <a href="index.php">
@@ -167,6 +189,7 @@ $materias = [
         </div>
     </div>
 
+    <div id="listaPerguntas">
     <?php if (count($perguntas) > 0): ?>
         <?php foreach ($perguntas as $p): ?>
             <div class="question-card mb-3 pergunta-item"
@@ -243,7 +266,7 @@ $materias = [
                 <!-- RESPOSTAS -->
                 <div class="respostas-container mt-2" id="respostas-<?= $p['id'] ?>">
                     <?php foreach ($listaRespostas as $r): ?>
-                        <div class="p-2 mb-2 border rounded bg-light">
+                        <div class="p-2 mb-2 border rounded bg-light" data-resposta-id="<?= $r['id'] ?>">
                             <div style="font-weight:700;
                                         color:<?= $r['usuario_tipo'] === 'professor' ? '#2ecc71' : ($r['usuario_tipo']==='IA'?'#ff6600':'blue'); ?>;
                                         margin-bottom:4px;">
@@ -309,6 +332,7 @@ $materias = [
     <?php else: ?>
         <div class="turmas-vazio"><i class="bi bi-journal-x"></i>Nenhuma pergunta encontrada.</div>
     <?php endif; ?>
+    </div>
     <div class="turmas-vazio" id="semResultadosBusca" style="display:none;">
         <i class="bi bi-journal-x"></i>Nenhuma pergunta encontrada para essa busca.
     </div>
@@ -379,16 +403,15 @@ $materias = [
         </div>
 
         <div class="modal-body">
-            
+
           <textarea name="descricao"
                     class="form-control pergunta-textarea"
                     rows="5"
                     placeholder="Escreva sua pergunta, todos queremos ajudar!"
                     required></textarea>
 
-          <!-- MATÉRIA -->
+          <!-- MATÉRIA + ENVIAR -->
           <div class="d-flex gap-2 mt-3">
-
             <div class="dropdown flex-grow-1">
               <button class="btn btn-light dropdown-toggle w-100 materia-btn"
                       type="button"
@@ -413,7 +436,6 @@ $materias = [
             <button type="submit" class="btn btn-dark btn-enviar">
               Enviar
             </button>
-
           </div>
 
           <input type="hidden" name="materia" id="materiaSelecionada" required>
@@ -446,12 +468,12 @@ $materias = [
 
           <!-- VALOR REAL ENVIADO -->
           <input type="hidden" name="resposta" id="respostaHidden" required>
-        </div>
 
-        <div class="modal-footer border-0 justify-content-end">
-          <button type="submit" class="btn btn-dark btn-enviar">
-            ENVIAR
-          </button>
+          <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-dark btn-enviar">
+              ENVIAR
+            </button>
+          </div>
         </div>
 
       </form>
@@ -524,6 +546,10 @@ $materias = [
 <script>
     const USUARIO_TIPO = "<?= htmlspecialchars($_SESSION['tipo'] ?? '', ENT_QUOTES) ?>";
     const USUARIO_ID = <?= (int)$user_id ?>;
+    const MATERIA_SELECIONADA = "<?= htmlspecialchars($materiaSelecionada, ENT_QUOTES) ?>";
+    const MATERIAS_LABELS = <?= json_encode($materias, JSON_UNESCAPED_SLASHES) ?>;
+    let ultimoPerguntaId = <?= (int)(!empty($perguntas) ? max(array_column($perguntas, 'id')) : 0) ?>;
+    let ultimaRespostaId = <?= (int)(!empty($allRespostas) ? max(array_column($allRespostas, 'id')) : 0) ?>;
 </script>
 <script src="js/bootstrap.bundle.min.js"></script>
 <script src="js/materias.js"></script>

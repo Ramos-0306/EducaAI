@@ -8,11 +8,16 @@ include 'bd.php';
 
 // Buscar todos os usuários e a contagem de interações
 try {
+    // LEFT JOIN com contagens pré-agregadas em vez de subquery correlacionada
+    // por linha (evita rodar 2 scans extras para cada usuário da lista).
+    // Também não traz mais a coluna "senha" (hash), que não é usada aqui.
     $stmt = $conn->query("
-        SELECT u.*, 
-               (SELECT COUNT(*) FROM perguntas p WHERE p.usuario_id = u.id) as qtd_perguntas,
-               (SELECT COUNT(*) FROM respostas r WHERE r.usuario_id = u.id) as qtd_respostas
-        FROM usuarios u 
+        SELECT u.id, u.nome, u.email, u.tipo, u.identificacao, u.criado_em,
+               COALESCE(pq.qtd, 0) AS qtd_perguntas,
+               COALESCE(rq.qtd, 0) AS qtd_respostas
+        FROM usuarios u
+        LEFT JOIN (SELECT usuario_id, COUNT(*) AS qtd FROM perguntas GROUP BY usuario_id) pq ON pq.usuario_id = u.id
+        LEFT JOIN (SELECT usuario_id, COUNT(*) AS qtd FROM respostas GROUP BY usuario_id) rq ON rq.usuario_id = u.id
         ORDER BY u.criado_em DESC
     ");
     $usuarios = $stmt->fetchAll();

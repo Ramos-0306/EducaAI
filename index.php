@@ -1,7 +1,7 @@
 <?php
 
 session_start();
-include 'bd.php'; // conexão PDO
+// Não precisa mais de bd.php: o nome do usuário logado já vem da sessão.
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -144,15 +144,9 @@ include 'bd.php'; // conexão PDO
 
       <?php if (isset($_SESSION['user_id'])): ?>
         <?php
-          // Pega o nome do usuário
-          $nome = '';
-          try {
-              $stmt = $conn->prepare("SELECT nome FROM usuarios WHERE id = ?");
-              $stmt->execute([$_SESSION['user_id']]);
-              $nome = $stmt->fetchColumn();
-          } catch (Exception $e) {
-              $nome = 'Usuário';
-          }
+          // Nome já foi guardado na sessão no login/registo — evita uma
+          // consulta extra ao banco só para repetir um dado que já temos.
+          $nome = $_SESSION['nome'] ?? 'Usuário';
         ?>
 
         <span class="me-3">👋 Olá, <strong><?= htmlspecialchars($nome) ?></strong></span>
@@ -205,13 +199,17 @@ include 'bd.php'; // conexão PDO
 <!-- Modal personalizado para professor -->
 <div class="modal fade" id="professorModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content" style="background-color: #0F172A; color: white;">
+    <div class="modal-content bg-dark text-white">
       <div class="modal-header border-0">
-        <h5 class="modal-title">Registo Concluído!</h5>
+        <h5 class="modal-title"><i class="bi bi-check-circle-fill me-2 text-success"></i>Registo Concluído!</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center">
-        <p>📧 Obrigado por se registar! Brevemente, a sua identificação será enviada por e-mail</p>
+        <i class="bi bi-envelope-check display-4 text-primary d-block mb-3"></i>
+        <p class="text-white-50 mb-0">Obrigado por se registar! Brevemente, a sua identificação será enviada por e-mail.</p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">Entendi</button>
       </div>
     </div>
   </div>

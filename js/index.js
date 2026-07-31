@@ -194,17 +194,11 @@ document.addEventListener("DOMContentLoaded", () => {
         signupModal.hide();
 
         if (tipoUsuario === 'aluno') {
-          // Exibir apenas o toast de confirmação
-          showToast("Conta criada com sucesso! Faça login como aluno.", "success");
-
-          // Configurar o formulário do modal de login diretamente para Aluno
-          tipoLogin = 'aluno';
-          loginTipoEscolha.classList.add('d-none');
-          loginForm.classList.remove('d-none');
-          loginIdentificacaoContainer.style.display = 'none';
-
-          // Abrir o modal de login
-          loginModal.show();
+          // O backend já loga o aluno automaticamente (sessão criada no registro.php),
+          // então basta redirecionar direto pra página logada, sem passar pelo login.
+          // O toast é exibido em materias.php (via ?toast=), pois redirecionar e mostrar
+          // o toast na mesma página ao mesmo tempo fazia a navegação cortar a animação.
+          window.location.href = 'materias.php?toast=conta_criada';
         } else if (tipoUsuario === 'professor') {
           professorModalBody.textContent = "📧 Obrigado por se cadastrar! Brevemente seu ID de identificação será enviado por e-mail.";
           professorModal.show();

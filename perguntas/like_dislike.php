@@ -46,14 +46,16 @@ try {
         $acao_atual = $acao;
     }
 
-    // Contadores atualizados
-    $likesStmt = $conn->prepare("SELECT COUNT(*) FROM likes_dislikes WHERE item_id=? AND tipo=? AND acao='like'");
-    $likesStmt->execute([$id, $tipo]);
-    $likes = $likesStmt->fetchColumn();
-
-    $dislikesStmt = $conn->prepare("SELECT COUNT(*) FROM likes_dislikes WHERE item_id=? AND tipo=? AND acao='dislike'");
-    $dislikesStmt->execute([$id, $tipo]);
-    $dislikes = $dislikesStmt->fetchColumn();
+    // Contadores atualizados (1 query em vez de 2, usando FILTER)
+    $countStmt = $conn->prepare("
+        SELECT COUNT(*) FILTER (WHERE acao = 'like') AS likes,
+               COUNT(*) FILTER (WHERE acao = 'dislike') AS dislikes
+        FROM likes_dislikes WHERE item_id = ? AND tipo = ?
+    ");
+    $countStmt->execute([$id, $tipo]);
+    $counts = $countStmt->fetch(PDO::FETCH_ASSOC);
+    $likes = $counts['likes'];
+    $dislikes = $counts['dislikes'];
 
     echo json_encode([
         'success' => true,

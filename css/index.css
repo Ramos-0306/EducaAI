@@ -260,7 +260,7 @@ section {
 
 
 /* ============================================
-   SEÇÃO 1: HERO SECTION (#111213 + Fundo 1.png)
+   SEÇÃO 1: HERO SECTION (#111213 + Fundo 2.png)
    ============================================ */
 #heroSection {
   position: relative;
@@ -272,7 +272,7 @@ section {
   background-color: var(--bg-dark-main);
   background-image:
     radial-gradient(ellipse at center, rgba(17, 18, 19, 0.5) 0%, rgba(17, 18, 19, 0.92) 100%),
-    url('../img/Fundo 1.png');
+    url('../img/Fundo 2.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1095,5 +1095,44 @@ footer .bg-secondary {
 
   footer .container .row>div {
     text-align: center !important;
+  }
+
+  /* ====== NAVBAR MOBILE: login/registo (ou nome/sair) ao lado da logo ====== */
+  .navbar .container {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .navbar-brand img {
+    width: 64px;
+  }
+
+  /* Barra de pesquisa desce para uma linha própria, abaixo do topo */
+  #navbarSearch {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: 100%;
+    margin: 0 !important;
+  }
+
+  /* Ações (login/registo ou nome/sair) ficam compactas, ao lado da logo */
+  .navbar .d-flex.align-items-center.text-white {
+    gap: 4px;
+  }
+
+  .navbar .d-flex.align-items-center span.me-3 {
+    font-size: 0.78rem;
+    margin-right: 6px !important;
+    white-space: nowrap;
+  }
+
+  .navbar .d-flex.align-items-center a.fw-semibold.me-3.text-white {
+    margin-right: 8px !important;
+    font-size: 0.8rem;
+  }
+
+  .navbar .btn-outline-light {
+    padding: 6px 14px;
+    font-size: 0.78rem;
   }
 }

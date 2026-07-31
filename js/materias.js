@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", function () {
             mostrarToastMaterias('Pergunta excluída com sucesso!', 'success');
         } else if (toastType === 'resposta_excluida') {
             mostrarToastMaterias('Resposta excluída com sucesso!', 'success');
+        } else if (toastType === 'conta_criada') {
+            mostrarToastMaterias('Conta criada com sucesso!', 'success');
         }
 
         // Limpar o parâmetro da URL sem recarregar
@@ -76,6 +78,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // ===== TURMAS =====
     inicializarTurmas();
+
+    // ===== NOVAS PERGUNTAS EM TEMPO REAL =====
+    inicializarPollingPerguntas();
 });
 
 // Abre/fecha o container de respostas de uma pergunta com transição suave
@@ -103,15 +108,395 @@ function abrirRespostas(perguntaId, btn) {
     }
 }
 
+// ===== NOVAS PERGUNTAS EM TEMPO REAL (polling) =====
+const INTERVALO_POLLING_PERGUNTAS = 5000; // 5s: rápido o suficiente para parecer instantâneo sem sobrecarregar o servidor
+
+function inicializarPollingPerguntas() {
+    const lista = document.getElementById('listaPerguntas');
+    if (!lista) return;
+
+    setInterval(buscarNovasPerguntas, INTERVALO_POLLING_PERGUNTAS);
+}
+
+function buscarNovasPerguntas() {
+    // Não busca se a aba estiver em segundo plano, pra economizar requisições
+    if (document.hidden) return;
+
+    const lista = document.getElementById('listaPerguntas');
+    if (!lista) return;
+
+    const idsVisiveis = Array.from(lista.querySelectorAll('.pergunta-item'))
+        .map(el => el.id.replace('pergunta-', ''));
+    const idsRespostasVisiveis = Array.from(lista.querySelectorAll('[data-resposta-id]'))
+        .map(el => el.dataset.respostaId);
+
+    const params = new URLSearchParams();
+    params.set('ultimo_id', ultimoPerguntaId);
+    params.set('ultima_resposta_id', ultimaRespostaId);
+    if (idsVisiveis.length) params.set('ids_visiveis', idsVisiveis.join(','));
+    if (idsRespostasVisiveis.length) params.set('ids_respostas_visiveis', idsRespostasVisiveis.join(','));
+    if (MATERIA_SELECIONADA) params.set('materia', MATERIA_SELECIONADA);
+
+    fetch('perguntas/buscar_novas_perguntas.php?' + params.toString())
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) return;
+
+            // Perguntas excluídas por outro usuário: remove da tela de quem ainda está vendo
+            (data.perguntas_removidas || []).forEach(id => {
+                const card = document.getElementById('pergunta-' + id);
+                if (card) card.remove();
+            });
+
+            if (data.perguntas_removidas && data.perguntas_removidas.length
+                && lista.querySelectorAll('.pergunta-item').length === 0) {
+                lista.innerHTML = '<div class="turmas-vazio"><i class="bi bi-journal-x"></i>Nenhuma pergunta encontrada.</div>';
+            }
+
+            // Perguntas vêm em ordem crescente de data; insere cada uma no topo,
+            // então a mais nova acaba ficando por último inserida = primeiro na tela.
+            (data.perguntas || []).forEach(p => {
+                const vazio = lista.querySelector('.turmas-vazio');
+                if (vazio) vazio.remove();
+
+                const card = criarCardPergunta(p);
+                lista.prepend(card);
+                bindPerguntaCardEvents(card);
+                if ((document.getElementById('searchPerguntas') || {}).value) {
+                    aplicarFiltroBusca(document.getElementById('searchPerguntas').value, card);
+                }
+                if (p.id > ultimoPerguntaId) ultimoPerguntaId = p.id;
+            });
+
+            // Novas respostas de outros usuários em perguntas já visíveis
+            (data.novas_respostas || []).forEach(r => {
+                inserirNovaResposta(r);
+                if (r.id > ultimaRespostaId) ultimaRespostaId = r.id;
+            });
+
+            // Respostas excluídas por outro usuário: remove da tela de quem ainda está vendo
+            (data.respostas_removidas || []).forEach(id => {
+                const el = lista.querySelector(`[data-resposta-id="${id}"]`);
+                if (!el) return;
+
+                const container = el.closest('.respostas-container');
+                el.remove();
+
+                if (container) {
+                    const perguntaId = container.id.replace('respostas-', '');
+                    const card = document.getElementById('pergunta-' + perguntaId);
+                    if (card) atualizarBotaoToggleRespostas(card, perguntaId);
+                    if (container.classList.contains('show')) {
+                        container.style.maxHeight = container.scrollHeight + 'px';
+                    }
+                }
+            });
+        })
+        .catch(() => {});
+}
+
+function inserirNovaResposta(r) {
+    const card = document.getElementById('pergunta-' + r.pergunta_id);
+    if (!card) return; // pergunta não está visível nesta tela (ex.: filtro de matéria diferente)
+
+    const container = document.getElementById('respostas-' + r.pergunta_id);
+    if (!container || container.querySelector(`[data-resposta-id="${r.id}"]`)) return;
+
+    const el = criarElementoResposta(r);
+    container.appendChild(el);
+    bindRespostaEvents(el, r.pergunta_id);
+
+    atualizarBotaoToggleRespostas(card, r.pergunta_id);
+
+    // Se o container já estiver aberto, recalcula a altura pra não cortar o conteúdo novo
+    if (container.classList.contains('show')) {
+        container.style.maxHeight = container.scrollHeight + 'px';
+    }
+}
+
+function criarElementoResposta(r) {
+    const div = document.createElement('div');
+    div.className = 'p-2 mb-2 border rounded bg-light';
+    div.dataset.respostaId = r.id;
+
+    const cor = r.usuario_tipo === 'professor' ? '#2ecc71' : (r.usuario_tipo === 'IA' ? '#ff6600' : 'blue');
+    const iconTipo = r.usuario_tipo === 'professor'
+        ? '<i class="bi bi-patch-check-fill text-primary ms-1" title="Professor verificado"></i>'
+        : (r.usuario_tipo === 'IA'
+            ? '<i class="bi bi-robot" title="Resposta da IA"></i>'
+            : '<i class="bi bi-person-fill text-secondary ms-1" title="Aluno"></i>');
+    const dataFormatada = new Date(r.criado_em).toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    div.innerHTML = `
+        <div style="font-weight:700; color:${cor}; margin-bottom:4px;">Respondido ${iconTipo}</div>
+        <div style="font-weight:600; margin-bottom:2px;">${escapeHtml(r.usuario_nome)}</div>
+        <div>${escapeHtml(r.resposta).replace(/\n/g, '<br>')}</div>
+        <div class="text-muted" style="font-size:12px; margin-top:4px;">
+            Postada em ${dataFormatada}
+            <div class="mt-2 action-row">
+                <div class="actions-left">
+                    <div class="like-dislike-container mt-1" data-id="${r.id}" data-tipo="resposta">
+                        <button class="like-btn" ${USUARIO_ID ? '' : 'disabled'}>
+                            <i class="bi bi-hand-thumbs-up"></i>
+                            <span class="like-count">0</span>
+                        </button>
+                        <button class="dislike-btn" ${USUARIO_ID ? '' : 'disabled'}>
+                            <i class="bi bi-hand-thumbs-down"></i>
+                            <span class="dislike-count">0</span>
+                        </button>
+                    </div>
+                    ${r.pode_excluir ? `
+                        <button class="icon-btn icon-delete excluir-resposta" data-id="${r.id}" data-pergunta="${r.pergunta_id}" title="Excluir Resposta">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+
+    return div;
+}
+
+function bindRespostaEvents(el, perguntaId) {
+    el.querySelectorAll('.like-btn, .dislike-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const container = this.closest('.like-dislike-container');
+            const id = container.dataset.id;
+            const tipo = container.dataset.tipo;
+            const acao = this.classList.contains('like-btn') ? 'like' : 'dislike';
+
+            fetch('perguntas/like_dislike.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${encodeURIComponent(id)}&tipo=${encodeURIComponent(tipo)}&acao=${encodeURIComponent(acao)}`
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const likeBtn = container.querySelector('.like-btn');
+                        const dislikeBtn = container.querySelector('.dislike-btn');
+
+                        container.querySelector('.like-count').textContent = data.likes;
+                        container.querySelector('.dislike-count').textContent = data.dislikes;
+
+                        likeBtn.classList.remove('active-like');
+                        dislikeBtn.classList.remove('active-dislike');
+
+                        if (data.acao_atual === 'like') likeBtn.classList.add('active-like');
+                        if (data.acao_atual === 'dislike') dislikeBtn.classList.add('active-dislike');
+                    } else {
+                        mostrarToastMaterias('Erro: ' + (data.message || 'Falha ao registrar voto.'), 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error('Erro no fetch like_dislike:', err);
+                    mostrarToastMaterias('Erro de conexão com o servidor.', 'error');
+                });
+        });
+    });
+
+    const excluirBtn = el.querySelector('.excluir-resposta');
+    if (excluirBtn) {
+        excluirBtn.addEventListener('click', function () {
+            const id = this.dataset.id;
+            const respostaDiv = this.closest('.p-2');
+
+            acaoExclusao = () => {
+                fetch('perguntas/excluir_resposta.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `id=${id}`
+                })
+                    .then(() => {
+                        if (respostaDiv) respostaDiv.remove();
+
+                        modalConfirmarExclusao.hide();
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('toast', 'resposta_excluida');
+                        window.location.href = 'materias.php?' + params.toString();
+                    })
+                    .catch(() => console.error("❌ Erro ao excluir resposta"));
+            };
+
+            modalConfirmarExclusao.show();
+        });
+    }
+}
+
+// Cria (na primeira resposta) ou atualiza a contagem do botão que mostra/esconde as respostas
+function atualizarBotaoToggleRespostas(card, perguntaId) {
+    const container = document.getElementById('respostas-' + perguntaId);
+    const count = container ? container.children.length : 0;
+    let btn = card.querySelector('.toggle-respostas');
+
+    if (count === 0) {
+        if (btn) btn.remove();
+        return;
+    }
+
+    if (!btn) {
+        const actionsLeft = card.querySelector('.actions-left');
+        if (!actionsLeft) return;
+        btn = document.createElement('button');
+        btn.className = 'btn btn-sm btn-secondary toggle-respostas';
+        btn.dataset.pergunta = perguntaId;
+        actionsLeft.insertBefore(btn, actionsLeft.firstChild);
+        btn.addEventListener('click', function () {
+            abrirRespostas(this.dataset.pergunta, this);
+        });
+    }
+
+    const aberto = container && container.classList.contains('show');
+    const iconeClasse = aberto ? 'bi-chevron-up' : 'bi-chevron-down';
+    btn.innerHTML = `<i class="bi ${iconeClasse}"></i>(${count})`;
+}
+
+function criarCardPergunta(p) {
+    const div = document.createElement('div');
+    div.className = 'question-card mb-3 pergunta-item highlight-pergunta';
+    div.id = 'pergunta-' + p.id;
+    div.dataset.search = (p.descricao || '').toLowerCase();
+
+    const materiaLabel = MATERIAS_LABELS[p.materia] || escapeHtml(p.materia);
+    const dataFormatada = new Date(p.criado_em).toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+    const iconTipo = p.usuario_tipo === 'professor'
+        ? '<i class="bi bi-patch-check-fill text-primary ms-1" title="Professor verificado"></i>'
+        : '<i class="bi bi-person-fill text-secondary ms-1" title="Aluno"></i>';
+
+    div.innerHTML = `
+        <span class="text-muted">
+            ${materiaLabel} |
+            ${escapeHtml(p.usuario_nome)}
+            ${iconTipo}
+        </span>
+        <p class="mt-2">${escapeHtml(p.descricao).replace(/\n/g, '<br>')}</p>
+        <small class="text-muted">Postada em ${dataFormatada}</small>
+        <div class="mt-2 action-row">
+            <div class="actions-left">
+                ${USUARIO_ID ? `
+                    <button class="icon-btn icon-reply responder-btn" data-pergunta="${p.id}" title="Responder">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                ` : ''}
+                ${p.pode_excluir ? `
+                    <button class="icon-btn icon-delete excluir-pergunta" data-id="${p.id}" title="Excluir">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                ` : ''}
+            </div>
+            <div class="like-dislike-container" data-id="${p.id}" data-tipo="pergunta">
+                <button class="like-btn" ${USUARIO_ID ? '' : 'disabled'}>
+                    <i class="bi bi-hand-thumbs-up"></i>
+                    <span class="like-count">0</span>
+                </button>
+                <button class="dislike-btn" ${USUARIO_ID ? '' : 'disabled'}>
+                    <i class="bi bi-hand-thumbs-down"></i>
+                    <span class="dislike-count">0</span>
+                </button>
+            </div>
+        </div>
+        <div class="respostas-container mt-2" id="respostas-${p.id}"></div>
+    `;
+
+    setTimeout(() => div.classList.remove('highlight-pergunta'), 1800);
+    return div;
+}
+
+// Liga os eventos (responder, excluir, like/dislike) num card criado dinamicamente,
+// já que os listeners iniciais são presos só nos elementos existentes no carregamento da página.
+function bindPerguntaCardEvents(card) {
+    const responderBtn = card.querySelector('.responder-btn');
+    if (responderBtn) {
+        responderBtn.addEventListener('click', function () {
+            const perguntaId = this.dataset.pergunta;
+            const modal = new bootstrap.Modal(document.getElementById('modalResposta'));
+            document.getElementById('modalPerguntaId').value = perguntaId;
+            modal.show();
+        });
+    }
+
+    const excluirBtn = card.querySelector('.excluir-pergunta');
+    if (excluirBtn) {
+        excluirBtn.addEventListener('click', function () {
+            const id = this.dataset.id;
+
+            acaoExclusao = () => {
+                fetch('perguntas/excluir_pergunta.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `id=${id}`
+                })
+                    .then(() => {
+                        modalConfirmarExclusao.hide();
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('toast', 'pergunta_excluida');
+                        window.location.href = 'materias.php?' + params.toString();
+                    })
+                    .catch(() => console.error("❌ Erro ao excluir pergunta"));
+            };
+
+            modalConfirmarExclusao.show();
+        });
+    }
+
+    card.querySelectorAll('.like-btn, .dislike-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const container = this.closest('.like-dislike-container');
+            const id = container.dataset.id;
+            const tipo = container.dataset.tipo;
+            const acao = this.classList.contains('like-btn') ? 'like' : 'dislike';
+
+            fetch('perguntas/like_dislike.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${encodeURIComponent(id)}&tipo=${encodeURIComponent(tipo)}&acao=${encodeURIComponent(acao)}`
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const likeBtn = container.querySelector('.like-btn');
+                        const dislikeBtn = container.querySelector('.dislike-btn');
+
+                        container.querySelector('.like-count').textContent = data.likes;
+                        container.querySelector('.dislike-count').textContent = data.dislikes;
+
+                        likeBtn.classList.remove('active-like');
+                        dislikeBtn.classList.remove('active-dislike');
+
+                        if (data.acao_atual === 'like') likeBtn.classList.add('active-like');
+                        if (data.acao_atual === 'dislike') dislikeBtn.classList.add('active-dislike');
+                    } else {
+                        mostrarToastMaterias('Erro: ' + (data.message || 'Falha ao registrar voto.'), 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error('Erro no fetch like_dislike:', err);
+                    mostrarToastMaterias('Erro de conexão com o servidor.', 'error');
+                });
+        });
+    });
+}
+
+function aplicarFiltroBusca(termo, card) {
+    const texto = card.dataset.search;
+    const bate = texto.includes(termo.toLowerCase());
+    card.style.display = bate ? 'block' : 'none';
+}
+
 // ===== NOTIFICAÇÕES =====
 function inicializarNotificacoes() {
     const btnNotificacoes = document.getElementById('btnNotificacoes');
     const modalEl = document.getElementById('modalNotificacoes');
     if (!btnNotificacoes || !modalEl) return; // usuário não logado
 
-    // Atualiza o badge periodicamente
+    // Atualiza o badge periodicamente (mesmo ritmo do polling de perguntas)
     atualizarBadgeNotificacoes();
-    setInterval(atualizarBadgeNotificacoes, 30000);
+    setInterval(atualizarBadgeNotificacoes, INTERVALO_POLLING_PERGUNTAS);
 
     // Ao abrir o modal, carrega a lista de notificações não lidas
     modalEl.addEventListener('shown.bs.modal', function () {
@@ -120,6 +505,8 @@ function inicializarNotificacoes() {
 }
 
 function atualizarBadgeNotificacoes() {
+    if (document.hidden) return;
+
     fetch('notificacoes/buscar_notificacoes.php')
         .then(res => res.json())
         .then(data => {
@@ -929,4 +1316,38 @@ document.getElementById("formResposta").addEventListener("submit", function (e) 
 
     btnEnviar.disabled = true;
     btnEnviar.innerText = "Enviando...";
+});
+
+// ====== SIDEBAR MOBILE (abrir/fechar via botão hambúrguer) ======
+document.addEventListener("DOMContentLoaded", function () {
+    const sidebar = document.getElementById("sidebar");
+    const toggleBtn = document.getElementById("sidebarToggle");
+    const overlay = document.getElementById("sidebarOverlay");
+
+    if (!sidebar || !toggleBtn || !overlay) return;
+
+    function abrirSidebar() {
+        sidebar.classList.add("sidebar-open");
+        overlay.classList.add("sidebar-overlay-visible");
+    }
+
+    function fecharSidebar() {
+        sidebar.classList.remove("sidebar-open");
+        overlay.classList.remove("sidebar-overlay-visible");
+    }
+
+    toggleBtn.addEventListener("click", function () {
+        if (sidebar.classList.contains("sidebar-open")) {
+            fecharSidebar();
+        } else {
+            abrirSidebar();
+        }
+    });
+
+    overlay.addEventListener("click", fecharSidebar);
+
+    // Fecha a sidebar ao navegar por um item de matéria (mobile)
+    sidebar.querySelectorAll("a").forEach(function (link) {
+        link.addEventListener("click", fecharSidebar);
+    });
 });
