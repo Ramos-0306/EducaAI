@@ -8,6 +8,11 @@ RUN apt-get update && apt-get install -y \
     && a2enmod rewrite \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Corrige bug conhecido das imagens php:apache (Bookworm): o apt-get acima
+# deixa dois MPMs ativos em simultâneo (mpm_event + mpm_prefork), o que
+# impede o Apache de arrancar. mod_php exige mpm_prefork, não mpm_event.
+RUN a2dismod mpm_event 2>/dev/null; a2enmod mpm_prefork
+
 # Permite que ficheiros .htaccess funcionem (regravação de URLs)
 RUN { \
         echo '<Directory /var/www/html/>'; \
