@@ -17,7 +17,7 @@ RUN rm -f /etc/apache2/mods-enabled/mpm_event.load \
            /etc/apache2/mods-enabled/mpm_worker.load \
            /etc/apache2/mods-enabled/mpm_worker.conf \
     && a2enmod mpm_prefork \
-    && ls /etc/apache2/mods-enabled/ | grep mpm
+    && apache2ctl -M 2>&1 | grep -i mpm
 
 # Permite que ficheiros .htaccess funcionem (regravação de URLs)
 RUN { \
@@ -33,6 +33,12 @@ COPY . /var/www/html/
 # só sabe escutar na 80, por isso ajustamos isso no arranque do container
 RUN printf '#!/bin/bash\nset -e\nPORT="${PORT:-80}"\nsed -i "s/80/${PORT}/g" /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
+
+# Verificação final: testa a configuração exatamente como o Apache faz no
+# arranque. Se houver algum erro (incluindo MPM duplicado), o build falha
+# aqui, com a mensagem completa nos logs de build — evita ter de fazer
+# deploy às cegas para descobrir o problema.
+RUN apache2ctl configtest
 
 EXPOSE 80
 
