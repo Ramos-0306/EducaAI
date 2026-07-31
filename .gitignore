@@ -1,0 +1,28 @@
+# Variáveis de ambiente / segredos
+.env
+.env.*
+!.env.example
+
+# Dependências
+/vendor/
+/node_modules/
+
+# Ficheiros de sistema
+.DS_Store
+Thumbs.db
+
+# Logs e ficheiros temporários
+*.log
+*.tmp
+
+# Configurações de editores/IDEs
+.vscode/
+.idea/
+
+# Claude Code / agentes locais
+.claude/
+.agents/
+skills-lock.json
+
+# Ficheiro de teste de conexão (opcional manter fora do repositório público)
+test_db.php

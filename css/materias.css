@@ -1,0 +1,938 @@
+/* ====== RESET GLOBAL ====== */
+body {
+    min-height: 100vh;
+    display: flex;
+    background-color: #f8f9fa;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    /* evita scroll no body, só no main */
+}
+
+/* ====== SIDEBAR ====== */
+.sidebar {
+    width: 220px;
+    /* antes 90px */
+    background-color: #1e1e1e;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+
+    position: sticky;
+    /* fixa no topo da tela */
+    top: 0;
+    height: 100vh;
+    /* ocupa toda altura da tela */
+    overflow-y: auto;
+    /* permite scroll interno se tiver muitas matérias */
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo no topo */
+.sidebar img {
+    margin-bottom: 20px;
+}
+
+/* Links da sidebar (matérias) */
+.sidebar a {
+    width: 100%;
+    height: auto;
+    color: #bdbdbd;
+    background-color: #2a2a2a;
+    margin: 6px 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.sidebar a:hover {
+    background-color: #3b3b3b;
+    color: #fff;
+}
+
+.sidebar a.active {
+    background-color: #ffffff;
+    /* branco suave, pouco cinza */
+    color: inherit;
+    /* mantém as cores originais dos ícones */
+}
+
+/* ====== CONTEÚDO PRINCIPAL ====== */
+.main {
+    flex: 1;
+    padding: 30px;
+    height: 100vh;
+    /* ocupa toda altura da tela */
+    overflow-y: auto;
+    /* só a área das perguntas rola */
+    animation: fadeInMain 0.35s ease;
+}
+
+/* Transição suave ao trocar de matéria pela sidebar */
+.main.fade-out-main {
+    animation: fadeOutMain 0.2s ease forwards;
+}
+
+@keyframes fadeInMain {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOutMain {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
+/* ====== PERFIL À DIREITA ====== */
+.profile-box {
+    width: 280px;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    height: fit-content;
+    position: fixed;
+    /* sempre visível */
+    right: 20px;
+    top: 20px;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    /* garante que fique acima do main */
+}
+
+/* ====== CARTÃO DE PERGUNTA ====== */
+.question-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ====== SELECT BONITO DA MATÉRIA ====== */
+.form-select {
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border: 2px solid #ddd;
+    transition: 0.2s ease;
+}
+
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 8px rgba(13, 110, 253, 0.3);
+}
+
+.profile-content {
+    overflow: hidden;
+    opacity: 1;
+    margin-top: 1rem;
+    transition: max-height 0.35s ease, opacity 0.3s ease, margin-top 0.3s ease;
+}
+
+.profile-box.minimized .profile-content {
+    opacity: 0;
+    margin-top: 0;
+}
+
+
+/* ====== LIKE / DISLIKE ====== */
+
+.like-dislike-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.like-dislike-container button {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #555;
+
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.like-dislike-container button.active-like {
+    color: #2ecc71;
+    /* verde */
+}
+
+.like-dislike-container button.active-dislike {
+    color: #f1c40f;
+    /* amarelo */
+}
+
+/* ====== PERGUNTA ====== */
+.question-card {
+    position: relative;
+    /* referência do absolute */
+}
+
+/* ====== RESPOSTA ====== */
+.resposta-item {
+    position: relative;
+    padding-bottom: 40px;
+}
+
+.action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.actions-left {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+
+/* ===== BOTÕES DE AÇÃO (ÍCONES) ===== */
+.icon-btn {
+    background: transparent;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #6c757d;
+    transition: background 0.2s ease, color 0.2s ease;
+    font-size: 16px;
+}
+
+/* contador pequeno */
+.icon-btn .count {
+    font-size: 13px;
+}
+
+/* ===== FLUIDEZ DOS BOTÕES DE AÇÃO ===== */
+.icon-btn:hover,
+.like-dislike-container button:hover,
+.btn-toggle-aluno-perguntas:hover,
+.btn-remover-aluno:hover,
+.btn-aceitar-convite:hover,
+.btn-recusar-convite:hover {
+    transform: scale(1.08);
+}
+
+.icon-btn:active,
+.like-dislike-container button:active,
+.btn-toggle-aluno-perguntas:active,
+.btn-remover-aluno:active,
+.btn-aceitar-convite:active,
+.btn-recusar-convite:active {
+    transform: scale(0.94);
+}
+
+.like-dislike-container button,
+.btn-remover-aluno,
+.btn-aceitar-convite,
+.btn-recusar-convite {
+    transition: transform 0.18s ease, background 0.2s ease, color 0.2s ease;
+}
+
+/* 🔴 EXCLUIR */
+.icon-delete:hover {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+/* 🔵 RESPONDER */
+.icon-reply:hover {
+    color: #0d6efd;
+    background: rgba(13, 110, 253, 0.1);
+}
+
+/* 🔽 EXIBIR RESPOSTAS */
+.icon-toggle:hover {
+    color: #495057;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* 🔔 SINO DE NOTIFICAÇÕES */
+#btnNotificacoes {
+    transition: background 0.2s ease, color 0.2s ease, transform 0.18s ease;
+}
+
+#btnNotificacoes:hover {
+    color: #f1c40f;
+    background: rgba(241, 196, 15, 0.15);
+    transform: scale(1.08);
+}
+
+/* seta gira quando aberto  */
+.toggle-respostas.active i {
+    transform: rotate(180deg);
+    transition: transform 0.2s ease;
+}
+
+/* ===== ANIMAÇÃO SUAVE DE ABERTURA DAS RESPOSTAS ===== */
+.respostas-container {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.35s ease, opacity 0.3s ease;
+}
+
+.respostas-container.show {
+    opacity: 1;
+}
+
+@keyframes fadeInUpResposta {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== TRANSFORMAR RESPOSTAS EM "BALÃO DE CHAT" ===== */
+
+.respostas-container .bg-light {
+    position: relative;
+    background: #f1f3f5 !important;
+    /* branco escuro */
+    border-radius: 18px !important;
+    border: 1px solid #dee2e6;
+    padding: 14px 16px !important;
+    width: 85%;
+    /* ocupa tudo */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    margin-bottom: 16px;
+    opacity: 0;
+    animation: fadeInUpResposta 0.35s ease forwards;
+}
+
+.respostas-container.show .bg-light:nth-child(1) { animation-delay: 0.05s; }
+.respostas-container.show .bg-light:nth-child(2) { animation-delay: 0.1s; }
+.respostas-container.show .bg-light:nth-child(3) { animation-delay: 0.15s; }
+.respostas-container.show .bg-light:nth-child(4) { animation-delay: 0.2s; }
+.respostas-container.show .bg-light:nth-child(5) { animation-delay: 0.25s; }
+.respostas-container.show .bg-light:nth-child(n+6) { animation-delay: 0.3s; }
+
+/* destaque temporário ao navegar até uma pergunta pela notificação */
+.question-card.highlight-pergunta {
+    animation: highlightPulse 1.8s ease;
+}
+
+@keyframes highlightPulse {
+    0% { background-color: rgba(13, 110, 253, 0.18); }
+    100% { background-color: transparent; }
+}
+
+/* BICO DO BALÃO — lateral esquerda embaixo */
+.respostas-container .bg-light::before {
+    content: "";
+    position: absolute;
+    left: -10px;
+    /* joga pra fora */
+    bottom: 18px;
+    /* fica embaixo */
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right: 10px solid #f1f3f5;
+}
+
+/* Barra de pesquisa */
+.search-wrapper {
+    position: relative;
+    max-width: 100%;
+}
+
+.search-input {
+    width: 100%;
+    height: 42px;
+    padding: 0 45px 0 16px;
+    border-radius: 999px;
+    border: 1px solid #ddd;
+    background-color: #f1f3f5;
+    font-size: 15px;
+    transition: all 0.2s ease;
+}
+
+.search-input::placeholder {
+    color: #8b8f94;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #0d6efd;
+    background-color: #fff;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, .15);
+}
+
+.search-icon {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8b8f94;
+    font-size: 1.1rem;
+    pointer-events: none;
+}
+
+/* ===== MODAL PERGUNTA ===== */
+.modal-pergunta {
+    border-radius: 14px;
+    padding: 10px;
+}
+
+.pergunta-textarea {
+    border-radius: 12px;
+    border: none;
+    background: #f4f7fb;
+    padding: 14px;
+    resize: none;
+    font-size: 14px;
+}
+
+.pergunta-textarea:focus {
+    box-shadow: none;
+    background: #eef2f7;
+}
+
+.textarea-actions {
+    display: flex;
+    gap: 12px;
+    padding: 8px 4px;
+    color: #6c757d;
+    font-size: 18px;
+}
+
+.textarea-actions i {
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.textarea-actions i:hover {
+    color: #0d6efd;
+}
+
+/* Botão matéria */
+.materia-btn {
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+/* Botão enviar */
+.btn-enviar {
+    border-radius: 20px;
+    padding: 0 18px;
+    font-weight: 600;
+}
+
+/* Dropdown */
+.dropdown-menu {
+    border-radius: 12px;
+}
+
+/* Header mais clean */
+.modal-header h5 {
+    font-size: 18px;
+}
+
+/* Tamanho maior do modal */
+.modal-pergunta-lg {
+    max-width: 750px;
+    /* pode testar 700, 750 ou 800 */
+}
+
+/* Mais espaço interno */
+.modal-pergunta {
+    border-radius: 16px;
+    padding: 20px;
+}
+
+/* Textarea mais alto */
+.pergunta-textarea {
+    min-height: 200px;
+}
+
+/* ===== EDITOR DE RESPOSTA ===== */
+.editor-area {
+    min-height: 200px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #f4f7fb;
+    outline: none;
+    font-size: 14px;
+    position: relative;
+}
+
+/* Placeholder funcional */
+.editor-area:empty::before {
+    content: attr(data-placeholder);
+    color: #999;
+    pointer-events: none;
+}
+
+.editor-area:focus::before {
+    content: "";
+}
+
+.editor-area:focus {
+    background: #eef2f7;
+}
+
+/* ===== MODAL DE NOTIFICAÇÕES ===== */
+.modal-notificacoes-lg {
+    max-width: 460px;
+}
+
+.modal-notificacoes .modal-header {
+    padding-bottom: 4px;
+}
+
+.modal-notificacoes .modal-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+}
+
+.modal-notificacoes .modal-body {
+    max-height: 420px;
+    overflow-y: auto;
+    padding-top: 6px;
+}
+
+.notificacao-item {
+    background: #f4f7fb;
+    border: 1px solid #eef1f5 !important;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    transition: background 0.2s ease, transform 0.2s ease;
+    opacity: 0;
+    animation: fadeInUpResposta 0.3s ease forwards;
+}
+
+.notificacao-item:nth-child(1) { animation-delay: 0.03s; }
+.notificacao-item:nth-child(2) { animation-delay: 0.08s; }
+.notificacao-item:nth-child(3) { animation-delay: 0.13s; }
+.notificacao-item:nth-child(4) { animation-delay: 0.18s; }
+.notificacao-item:nth-child(n+5) { animation-delay: 0.22s; }
+
+.notificacao-item:hover {
+    background: #eaf1fd;
+    transform: translateY(-1px);
+}
+
+.notificacao-avatar {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd, #4f9eff);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    margin-right: 12px;
+}
+
+.notificacao-texto {
+    min-width: 0;
+}
+
+.notificacao-texto .fw-bold {
+    font-size: 14px;
+}
+
+.notificacao-texto .notificacao-trecho {
+    font-size: 13px;
+    color: #6c757d;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ver-notificacao {
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.notificacoes-vazio {
+    padding: 40px 10px;
+    text-align: center;
+    color: #adb5bd;
+}
+
+.notificacoes-vazio i {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 10px;
+    color: #dbe2ea;
+}
+
+/* ===== MODAL DE TURMAS ===== */
+.modal-turmas-lg {
+    max-width: 520px;
+}
+
+.modal-turmas .modal-header {
+    padding-bottom: 4px;
+}
+
+.modal-turmas .modal-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+}
+
+.modal-turmas .modal-body {
+    max-height: 480px;
+    overflow-y: auto;
+    padding-top: 6px;
+}
+
+.turmas-secao-titulo {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #8b93a1;
+    margin: 14px 0 8px;
+}
+
+.turmas-secao-titulo:first-child {
+    margin-top: 0;
+}
+
+/* Card de turma / aluno / convite — reaproveita o visual de .notificacao-item */
+.turma-card,
+.convite-card,
+.aluno-turma-item {
+    background: #f4f7fb;
+    border: 1px solid #eef1f5 !important;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    transition: background 0.2s ease, transform 0.2s ease;
+    opacity: 0;
+    animation: fadeInUpResposta 0.3s ease forwards;
+}
+
+.turma-card:nth-child(1), .aluno-turma-item:nth-child(1), .convite-card:nth-child(1) { animation-delay: 0.03s; }
+.turma-card:nth-child(2), .aluno-turma-item:nth-child(2), .convite-card:nth-child(2) { animation-delay: 0.08s; }
+.turma-card:nth-child(3), .aluno-turma-item:nth-child(3), .convite-card:nth-child(3) { animation-delay: 0.13s; }
+.turma-card:nth-child(4), .aluno-turma-item:nth-child(4), .convite-card:nth-child(4) { animation-delay: 0.18s; }
+.turma-card:nth-child(n+5), .aluno-turma-item:nth-child(n+5), .convite-card:nth-child(n+5) { animation-delay: 0.22s; }
+
+.turma-card:hover,
+.aluno-turma-item:hover {
+    background: #eaf1fd;
+    transform: translateY(-1px);
+    cursor: pointer;
+}
+
+.turma-card-avatar,
+.aluno-turma-avatar {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd, #4f9eff);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    margin-right: 12px;
+}
+
+.turmas-vazio {
+    padding: 24px 10px;
+    text-align: center;
+    color: #adb5bd;
+}
+
+.turmas-vazio i {
+    font-size: 34px;
+    display: block;
+    margin-bottom: 8px;
+    color: #dbe2ea;
+}
+
+/* Formulário de criar turma / convidar aluno por e-mail */
+.form-criar-turma,
+.busca-aluno-wrapper {
+    background: #f4f7fb;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+/* Cabeçalho da view de detalhe da turma */
+.turma-detalhe-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.btn-voltar-turmas {
+    border: none;
+    background: transparent;
+    color: #495057;
+    font-size: 18px;
+    padding: 0 6px;
+}
+
+.btn-voltar-turmas:hover {
+    color: #0d6efd;
+}
+
+/* Sub-lista de perguntas de um aluno (dentro do card do aluno) */
+.aluno-perguntas-lista {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.35s ease, opacity 0.3s ease;
+    margin-top: 0;
+}
+
+.aluno-perguntas-lista.show {
+    opacity: 1;
+    margin-top: 10px;
+}
+
+.aluno-pergunta-item {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    opacity: 0;
+    animation: fadeInUpResposta 0.3s ease forwards;
+}
+
+.btn-toggle-aluno-perguntas {
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+    border: none;
+    background: #eef1f5;
+    color: #495057;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.btn-toggle-aluno-perguntas:hover {
+    background: #dbe2ea;
+}
+
+.btn-toggle-aluno-perguntas.active {
+    transform: rotate(180deg);
+}
+
+/* ===== MODAL DE CONFIRMAÇÃO DE EXCLUSÃO ===== */
+#modalConfirmarExclusao .modal-content {
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    max-width: 320px;
+    /* modal menor */
+}
+
+#modalConfirmarExclusao .modal-header {
+    border-bottom: none;
+    justify-content: center;
+    padding-bottom: 0;
+}
+
+#modalConfirmarExclusao .modal-body {
+    padding: 10px 0;
+    font-size: 15px;
+}
+
+#modalConfirmarExclusao .modal-footer {
+    border-top: none;
+    justify-content: center;
+    gap: 10px;
+    padding-top: 0;
+}
+
+#modalConfirmarExclusao .btn {
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-weight: 600;
+}
+
+#modalConfirmarExclusao .btn-danger {
+    background: #dc3545;
+    border: none;
+}
+
+#modalConfirmarExclusao .btn-secondary {
+    background: #6c757d;
+    border: none;
+}
+
+/* Garante que a confirmação de exclusão sempre fique por cima de outros modais
+   (ex.: aberta de dentro do modal de Turmas) — o Bootstrap usa o mesmo z-index
+   para todos os modais, então quem vem depois no DOM vence; forçamos aqui. */
+#modalConfirmarExclusao {
+    z-index: 1075;
+}
+
+.modal-backdrop ~ .modal-backdrop {
+    z-index: 1070;
+}
+
+/* ===== quebra de linha P C ===== */
+.question-card p,
+.respostas-container div {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+
+
+.sidebar-logo {
+    text-align: center;
+    margin: 15px 0 20px 0;
+}
+
+.sidebar-logo img {
+    width: 85px;
+    display: block;
+    margin: 0 auto;
+    /* força centralização real */
+}
+
+/* ===== TOAST ===== */
+
+.toast-container-custom {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toast-custom {
+    min-width: 320px;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.15);
+
+    opacity: 0;
+    transform: translateX(100%);
+    transition: .35s;
+}
+
+.toast-custom.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-custom.hide {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.toast-success {
+    border-left: 5px solid #28a745;
+}
+
+.toast-error {
+    border-left: 5px solid #dc3545;
+}
+
+.toast-warning {
+    border-left: 5px solid #ffc107;
+}
+
+.toast-info {
+    border-left: 5px solid #0dcaf0;
+}
+
+.toast-icon {
+    font-size: 22px;
+}
+
+.toast-msg {
+    flex: 1;
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    background: rgba(0,0,0,.15);
+    animation: toastProgress linear forwards;
+}
+
+@keyframes toastProgress {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
