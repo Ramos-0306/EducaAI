@@ -558,12 +558,22 @@ if (formPergunta) {
         if (!document.getElementById("materiaSelecionada").value) {
             e.preventDefault();
             tooltipValidacao.show(); // Mostra o balão
-            
+
             // Esconde automaticamente depois de 3 segundos
             setTimeout(() => {
                 tooltipValidacao.hide();
             }, 3000);
+            return;
         }
+
+        // Evita envios duplicados ao clicar várias vezes enquanto a página carrega
+        const btnEnviar = formPergunta.querySelector(".btn-enviar");
+        if (btnEnviar.disabled) {
+            e.preventDefault();
+            return;
+        }
+        btnEnviar.disabled = true;
+        btnEnviar.innerText = "Enviando...";
     });
 }
 </script>

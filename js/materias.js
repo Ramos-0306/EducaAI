@@ -913,8 +913,20 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // modal resposta — copia texto limpo para o hidden antes de enviar
-document.getElementById("formResposta").addEventListener("submit", function () {
+document.getElementById("formResposta").addEventListener("submit", function (e) {
+    const form = this;
+    const btnEnviar = form.querySelector(".btn-enviar");
+
+    // Evita envios duplicados ao clicar várias vezes enquanto a página carrega
+    if (btnEnviar.disabled) {
+        e.preventDefault();
+        return;
+    }
+
     const editor = document.getElementById("editorResposta");
     const hidden = document.getElementById("respostaHidden");
     hidden.value = editor.innerText.trim();
+
+    btnEnviar.disabled = true;
+    btnEnviar.innerText = "Enviando...";
 });
