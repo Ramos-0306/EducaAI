@@ -16,12 +16,7 @@ try {
         "pgsql:host=$host;port=$port;dbname=$dbname;sslmode=require",
         $user,
         $pass,
-        [
-            // Reaproveita a conexão TCP/TLS entre requisições atendidas pelo
-            // mesmo processo Apache, evitando refazer o handshake (que é o
-            // maior custo de latência por ser um Postgres remoto na nuvem).
-            PDO::ATTR_PERSISTENT => true,
-        ]
+        []
     );
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
