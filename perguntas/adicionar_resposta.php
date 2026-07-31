@@ -23,6 +23,8 @@ if (!$pergunta_id || empty($resposta_texto)) {
     exit;
 }
 
+session_write_close();
+
 try {
     // Usando $conn, que é o que existe no bd.php
     $stmt = $conn->prepare("

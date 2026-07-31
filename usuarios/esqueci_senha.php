@@ -24,7 +24,8 @@ if (!$email) {
 }
 
 // Resposta genérica — não revela se o e-mail existe ou não na base
-$respostaGenerica = ['success' => true, 'message' => 'Se esse e-mail existir na nossa base, enviamos um código de recuperação.'];
+$respostaGenerica = ['success' => true, 'message' => 'Enviamos um código de recuperação.'];
+$respostaErro = ['success' => false, 'message' => 'Erro ao enviar. Tente novamente.'];
 
 try {
     $stmt = $conn->prepare("SELECT id, nome FROM usuarios WHERE email = :email");
@@ -72,6 +73,8 @@ try {
         $mail->send();
     } catch (Exception $e) {
         error_log("Erro ao enviar e-mail de recuperação: " . $mail->ErrorInfo);
+        echo json_encode($respostaErro);
+        exit;
     }
 
     echo json_encode($respostaGenerica);

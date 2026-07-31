@@ -200,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // o toast na mesma página ao mesmo tempo fazia a navegação cortar a animação.
           window.location.href = 'materias.php?toast=conta_criada';
         } else if (tipoUsuario === 'professor') {
-          professorModalBody.textContent = "📧 Obrigado por se cadastrar! Brevemente seu ID de identificação será enviado por e-mail.";
+          professorModalBody.textContent = "Obrigado por se cadastrar! Brevemente seu ID de identificação será enviado por e-mail.";
           professorModal.show();
 
           professorModalEl.addEventListener("hidden.bs.modal", () => {

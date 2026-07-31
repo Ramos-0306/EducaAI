@@ -30,8 +30,10 @@ try {
             $_SESSION['tipo'] = 'aluno';
             $_SESSION['nome'] = $user['nome'];
             $_SESSION['email'] = $user['email'];
+            session_write_close();
             echo json_encode(['success' => true]);
         } else {
+            session_write_close();
             echo json_encode(['success' => false, 'message' => 'Nome ou senha incorretos']);
         }
 
@@ -56,8 +58,10 @@ try {
             $_SESSION['tipo'] = $user['tipo']; // 'professor' ou 'ADM'
             $_SESSION['nome'] = $user['nome'];
             $_SESSION['email'] = $user['email'];
+            session_write_close();
             echo json_encode(['success' => true]);
         } else {
+            session_write_close();
             echo json_encode(['success' => false, 'message' => 'Senha incorreta']);
         }
 

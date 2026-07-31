@@ -6,6 +6,11 @@ if (empty($_SESSION['nome']) || empty($_SESSION['email'])) {
     exit;
 }
 
+// Liberta o lock da sessão já aqui: este pedido pode ficar bloqueado bastante
+// tempo à espera da IA (ver chamada ao Ollama mais abaixo), e enquanto isso
+// nenhuma outra aba/pedido do mesmo utilizador conseguiria avançar.
+session_write_close();
+
 // Conexão centralizada
 include __DIR__ . '/../bd.php';
 

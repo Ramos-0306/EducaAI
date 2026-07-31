@@ -15,6 +15,7 @@ $tipo = $_POST['tipo'] ?? '';
 $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 $acao = $_POST['acao'] ?? '';
 $user_id = $_SESSION['user_id'];
+session_write_close();
 
 if(!$id || !in_array($acao, ['like', 'dislike']) || !$tipo){
     echo json_encode(['success' => false, 'message' => 'Dados inválidos']);

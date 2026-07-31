@@ -7,6 +7,7 @@ if (empty($_SESSION['user_id'])) {
 }
 
 $isADM = isset($_SESSION['tipo']) && $_SESSION['tipo'] === 'ADM';
+$usuario_id_sessao = $_SESSION['user_id'];
 $id = $_POST['id'] ?? null;
 
 if (!$id) {
@@ -14,6 +15,8 @@ if (!$id) {
     echo "ID inválido.";
     exit;
 }
+
+session_write_close();
 
 // Conexão centralizada
 include __DIR__ . '/../bd.php';
@@ -29,7 +32,7 @@ if (!$pergunta) {
     exit;
 }
 
-if (!$isADM && $_SESSION['user_id'] != $pergunta['usuario_id']) {
+if (!$isADM && $usuario_id_sessao != $pergunta['usuario_id']) {
     http_response_code(403);
     echo "Você não tem permissão.";
     exit;

@@ -12,6 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $isProfessorOuADM = in_array($_SESSION['tipo'] ?? '', ['professor', 'ADM']);
+session_write_close();
 
 try {
     if ($isProfessorOuADM) {

@@ -25,6 +25,11 @@ $idsRespostasVisiveis = array_values(array_unique(array_filter(
 $user_id = $_SESSION['user_id'];
 $isADM = isset($_SESSION['tipo']) && $_SESSION['tipo'] === 'ADM';
 
+// Liberta o lock do ficheiro de sessão assim que possível: este endpoint é
+// chamado em polling contínuo e, enquanto guarda a sessão aberta, bloqueia
+// qualquer outro pedido do mesmo utilizador (ex.: clicar num filtro) até terminar.
+session_write_close();
+
 try {
     if ($materiaSelecionada !== '') {
         $stmt = $conn->prepare("

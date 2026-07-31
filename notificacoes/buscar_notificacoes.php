@@ -10,6 +10,9 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+$usuario_id = $_SESSION['user_id'];
+session_write_close();
+
 try {
     $stmt = $conn->prepare("
         SELECT n.id, n.ator_nome, n.tipo, n.pergunta_id, n.resposta_id, n.turma_id, n.convite_id,

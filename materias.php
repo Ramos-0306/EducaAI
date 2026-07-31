@@ -9,6 +9,13 @@ if (empty($_SESSION['nome']) || empty($_SESSION['email'])) {
 $isADM = isset($_SESSION['tipo']) && $_SESSION['tipo'] === 'ADM';
 $isProfessorOuADM = in_array($_SESSION['tipo'] ?? '', ['professor', 'ADM']);
 
+// Liberta o lock do ficheiro de sessão assim que possível: esta página não
+// escreve mais nada em $_SESSION a partir daqui, mas o polling em segundo
+// plano (buscar_novas_perguntas.php) usa a mesma sessão — mantê-la aberta
+// durante as várias queries abaixo faria esse polling (ou outro clique)
+// esperar em fila por este pedido.
+session_write_close();
+
 // Conexão com banco (centralizada)
 include 'bd.php';
 

@@ -15,6 +15,8 @@ if (!$id) {
     exit;
 }
 
+session_write_close();
+
 // Conexão centralizada
 include __DIR__ . '/../bd.php';
 
