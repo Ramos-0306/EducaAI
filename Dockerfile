@@ -31,7 +31,7 @@ COPY . /var/www/html/
 
 # O Railway injeta a porta em runtime via $PORT; o Apache por defeito
 # só sabe escutar na 80, por isso ajustamos isso no arranque do container
-RUN printf '#!/bin/bash\nset -e\nPORT="${PORT:-80}"\nsed -i "s/80/${PORT}/g" /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf\necho "=== Modulos MPM carregados ==="\napache2ctl -M 2>&1 | grep -i mpm || true\necho "=== apache2ctl configtest (config real de arranque) ==="\napache2ctl configtest\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
+RUN printf '#!/bin/bash\nset -e\nPORT="${PORT:-80}"\necho "=== PORT recebido do Railway ==="\necho "PORT=$PORT"\nsed -i "s/80/${PORT}/g" /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf\necho "=== ports.conf apos sed ==="\ncat /etc/apache2/ports.conf\necho "=== 000-default.conf apos sed ==="\ncat /etc/apache2/sites-available/000-default.conf\necho "=== mods-enabled (mpm) ==="\nls -la /etc/apache2/mods-enabled | grep -i mpm\necho "=== Modulos MPM carregados ==="\napache2ctl -M 2>&1 | grep -i mpm || true\necho "=== apache2ctl configtest (config real de arranque) ==="\napache2ctl configtest\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
 
 # Verificação de build: testa a config original (antes do sed de runtime).
