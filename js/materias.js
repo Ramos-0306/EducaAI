@@ -109,7 +109,7 @@ function abrirRespostas(perguntaId, btn) {
 }
 
 // ===== NOVAS PERGUNTAS EM TEMPO REAL (polling) =====
-const INTERVALO_POLLING_PERGUNTAS = 5000; // 5s: rápido o suficiente para parecer instantâneo sem sobrecarregar o servidor
+const INTERVALO_POLLING_PERGUNTAS = 15000; // 15s: a BD é remota (Supabase), cada poll mais frequente custa uma ligação/rede a mais
 
 function inicializarPollingPerguntas() {
     const lista = document.getElementById('listaPerguntas');
@@ -191,6 +191,16 @@ function buscarNovasPerguntas() {
                     }
                 }
             });
+
+            // Badge de notificações vem "de carona" nesta resposta, evitando
+            // um pedido/ligação à BD separado a cada intervalo de polling.
+            if (typeof data.notificacoes_nao_lidas === 'number') {
+                const badge = document.getElementById('badgeNotificacoes');
+                if (badge) {
+                    badge.textContent = data.notificacoes_nao_lidas;
+                    badge.style.display = data.notificacoes_nao_lidas > 0 ? '' : 'none';
+                }
+            }
         })
         .catch(() => {});
 }
@@ -494,9 +504,9 @@ function inicializarNotificacoes() {
     const modalEl = document.getElementById('modalNotificacoes');
     if (!btnNotificacoes || !modalEl) return; // usuário não logado
 
-    // Atualiza o badge periodicamente (mesmo ritmo do polling de perguntas)
-    atualizarBadgeNotificacoes();
-    setInterval(atualizarBadgeNotificacoes, INTERVALO_POLLING_PERGUNTAS);
+    // O badge é atualizado a partir da resposta do polling de perguntas
+    // (buscarNovasPerguntas), que já vem "de carona" com a contagem —
+    // evita um pedido/ligação à BD extra e periódico só para isto.
 
     // Ao abrir o modal, carrega a lista de notificações não lidas
     modalEl.addEventListener('shown.bs.modal', function () {

@@ -59,29 +59,29 @@ foreach ($allRespostas as $r) {
 }
 
 // --- OTIMIZAÇÃO: Buscar likes/dislikes em lote ---
+// Uma única query traz tanto os totais (agregados em PHP) quanto os votos do
+// próprio utilizador, evitando um segundo round-trip à base de dados remota
+// (cada round-trip custa dezenas de ms de latência de rede).
 $likesPerguntas = [];
 $dislikesPerguntas = [];
 $likesRespostas = [];
 $dislikesRespostas = [];
 
-$likesTotaisStmt = $conn->query("SELECT tipo, item_id, acao, COUNT(*) as qtd FROM likes_dislikes GROUP BY tipo, item_id, acao");
-foreach ($likesTotaisStmt->fetchAll() as $row) {
-    if ($row['tipo'] === 'pergunta') {
-        if ($row['acao'] === 'like') $likesPerguntas[$row['item_id']] = $row['qtd'];
-        if ($row['acao'] === 'dislike') $dislikesPerguntas[$row['item_id']] = $row['qtd'];
-    } elseif ($row['tipo'] === 'resposta') {
-        if ($row['acao'] === 'like') $likesRespostas[$row['item_id']] = $row['qtd'];
-        if ($row['acao'] === 'dislike') $dislikesRespostas[$row['item_id']] = $row['qtd'];
-    }
-}
-
 $user_id = $_SESSION['user_id'] ?? 0;
 $votosUsuarioPergunta = [];
 $votosUsuarioResposta = [];
-if ($user_id) {
-    $votosUserStmt = $conn->prepare("SELECT item_id, tipo, acao FROM likes_dislikes WHERE user_id = ?");
-    $votosUserStmt->execute([$user_id]);
-    foreach ($votosUserStmt->fetchAll() as $row) {
+
+$likesTotaisStmt = $conn->query("SELECT tipo, item_id, acao, user_id FROM likes_dislikes");
+foreach ($likesTotaisStmt->fetchAll() as $row) {
+    if ($row['tipo'] === 'pergunta') {
+        if ($row['acao'] === 'like') $likesPerguntas[$row['item_id']] = ($likesPerguntas[$row['item_id']] ?? 0) + 1;
+        if ($row['acao'] === 'dislike') $dislikesPerguntas[$row['item_id']] = ($dislikesPerguntas[$row['item_id']] ?? 0) + 1;
+    } elseif ($row['tipo'] === 'resposta') {
+        if ($row['acao'] === 'like') $likesRespostas[$row['item_id']] = ($likesRespostas[$row['item_id']] ?? 0) + 1;
+        if ($row['acao'] === 'dislike') $dislikesRespostas[$row['item_id']] = ($dislikesRespostas[$row['item_id']] ?? 0) + 1;
+    }
+
+    if ($user_id && (int)$row['user_id'] === (int)$user_id) {
         if ($row['tipo'] === 'pergunta') {
             $votosUsuarioPergunta[$row['item_id']] = $row['acao'];
         } elseif ($row['tipo'] === 'resposta') {

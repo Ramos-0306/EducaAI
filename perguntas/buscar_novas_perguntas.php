@@ -112,12 +112,19 @@ try {
         $respostasRemovidas = array_values(array_diff($idsRespostasVisiveis, $respExistentes));
     }
 
+    // Contagem de notificações não lidas: vai "carona" neste polling para não
+    // precisar de um pedido/ligação à BD separado a cada intervalo.
+    $notifStmt = $conn->prepare("SELECT COUNT(*) FROM notificacoes WHERE usuario_id = :usuario_id AND lida = false");
+    $notifStmt->execute([':usuario_id' => $user_id]);
+    $notificacoesNaoLidas = (int)$notifStmt->fetchColumn();
+
     echo json_encode([
         'success'              => true,
         'perguntas'            => $perguntas,
         'perguntas_removidas'  => $perguntasRemovidas,
         'novas_respostas'      => $novasRespostas,
         'respostas_removidas'  => $respostasRemovidas,
+        'notificacoes_nao_lidas' => $notificacoesNaoLidas,
     ]);
 } catch (PDOException $e) {
     error_log("Erro ao buscar novas perguntas: " . $e->getMessage());
