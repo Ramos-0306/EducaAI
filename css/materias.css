@@ -1027,4 +1027,49 @@ body {
     .main {
         width: 100%;
     }
+
+    /* ====== PERFIL - RECOLHER TOTAL NO MOBILE ====== */
+    .profile-box {
+        transition: width 0.35s ease, padding 0.35s ease, background-color 0.35s ease, box-shadow 0.35s ease;
+    }
+
+    #profileInfo,
+    #btnNotificacoes {
+        opacity: 1;
+        max-width: 200px;
+        overflow: hidden;
+        transition: opacity 0.25s ease, max-width 0.35s ease, margin 0.35s ease;
+    }
+
+    .profile-box.minimized {
+        width: auto;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .profile-box.minimized .profile-header {
+        margin: 0;
+    }
+
+    .profile-box.minimized #toggleProfile {
+        background-color: #1e1e1e;
+        border-color: #1e1e1e;
+        color: #fff;
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+    }
+
+    .profile-box.minimized #toggleProfile i {
+        color: #fff;
+    }
+
+    .profile-box.minimized #profileInfo,
+    .profile-box.minimized #btnNotificacoes {
+        opacity: 0;
+        max-width: 0;
+        margin: 0;
+        pointer-events: none;
+    }
 }

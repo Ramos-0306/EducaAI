@@ -348,7 +348,7 @@ $materias = [
 <!-- PERFIL -->
 <div class="profile-box" id="profileBox">
     <div class="profile-header d-flex justify-content-between align-items-center">
-        <div>
+        <div id="profileInfo">
             <h5 class="mb-0"><?= htmlspecialchars($_SESSION['nome']); ?></h5>
             <small class="text-muted">
                 <?= $_SESSION['tipo'] === 'ADM' ? 'Administrador' :
